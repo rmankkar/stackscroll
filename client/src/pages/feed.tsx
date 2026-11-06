@@ -9,7 +9,6 @@ import { type Question } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import { User } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area"; // Added import for ScrollArea
 
 export default function Feed() {
   const [, setLocation] = useLocation();
