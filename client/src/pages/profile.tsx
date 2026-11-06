@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { motion } from 'framer-motion';
-import { getUser, logout } from '@/lib/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  LogOut, 
-  User, 
-  Mail, 
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { motion } from "framer-motion";
+import { getUser, logout } from "@/lib/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  LogOut,
+  User,
+  Mail,
   ArrowBigUp,
-  MessageCircle 
-} from 'lucide-react';
-import { SiStackoverflow } from 'react-icons/si';
+  MessageCircle,
+  Zap,
+  Bookmark,
+} from "lucide-react";
+import { SiStackoverflow } from "react-icons/si";
+import { cn } from "@/lib/utils";
 
 interface UserProfile {
   name?: string;
@@ -28,7 +31,7 @@ export default function Profile() {
     const fetchUser = async () => {
       const userData = await getUser();
       if (!userData) {
-        setLocation('/');
+        setLocation("/");
         return;
       }
       setUser(userData);
@@ -39,79 +42,133 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await logout();
-    setLocation('/');
+    setLocation("/");
   };
 
   if (!user) {
     return null;
   }
 
+  const initials = user.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
+
+  const stats = [
+    {
+      icon: ArrowBigUp,
+      label: "Votes",
+      value: "0",
+      color: "text-primary shadow-primary/25",
+      bg: "bg-primary/10",
+    },
+    {
+      icon: MessageCircle,
+      label: "Comments",
+      value: "0",
+      color: "text-accent shadow-accent/25",
+      bg: "bg-accent/10",
+    },
+    {
+      icon: Zap,
+      label: "Activity",
+      value: "0",
+      color: "text-yellow-400 shadow-yellow-500/25",
+      bg: "bg-yellow-500/10",
+    },
+    {
+      icon: Bookmark,
+      label: "Bookmarks",
+      value: "0",
+      color: "text-cyan-400 shadow-cyan-500/25",
+      bg: "bg-cyan-500/10",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
+    <div className="min-h-screen bg-background relative overflow-hidden px-4 sm:px-6 pb-12">
+      <BackgroundBlobs />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6 }}
+        className="relative z-10 max-w-md mx-auto"
       >
-        <Card className="mx-auto max-w-md">
-          <CardHeader className="text-center">
-            <div className="mb-4 flex justify-center">
-              <Avatar className="h-24 w-24">
-                {user.picture ? (
-                  <AvatarImage src={user.picture} alt={user.name} />
-                ) : (
-                  <AvatarFallback className="text-2xl">
-                    {user.name?.[0]?.toUpperCase() || '?'}
-                  </AvatarFallback>
+        <Card className="glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+          <CardHeader className="bg-transparent text-center pb-8 pt-8">
+            <div className="flex justify-center mb-4">
+              <div
+                className={cn(
+                  "relative w-24 h-24 rounded-full flex items-center justify-center",
+                  "bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 ring-4 ring-white/10"
                 )}
-              </Avatar>
+              >
+                <Avatar className="w-22 h-22 border-2 border-white/5">
+                  {user.picture ? (
+                    <AvatarImage src={user.picture} alt={user.name} />
+                  ) : (
+                    <AvatarFallback className="text-xl font-bold text-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold">{user.name}</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {user.name}
+            </CardTitle>
+            <p className="text-muted-foreground/70 text-sm mt-2">
+              {user.email || "No email"}
+            </p>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            {/* User Info */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <User className="h-5 w-5" />
-                <span>{user.name}</span>
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Mail className="h-5 w-5" />
-                <span>{user.email}</span>
-              </div>
-            </div>
-
+          <CardContent className="space-y-6 px-8 pb-8">
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <ArrowBigUp className="mx-auto h-6 w-6 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">0</p>
-                  <p className="text-sm text-muted-foreground">Votes</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <MessageCircle className="mx-auto h-6 w-6 text-primary" />
-                  <p className="mt-2 text-2xl font-bold">0</p>
-                  <p className="text-sm text-muted-foreground">Comments</p>
-                </CardContent>
-              </Card>
+              {stats.map((stat) => (
+                <Card
+                  key={stat.label}
+                  className={cn(
+                    "rounded-2xl p-4 glass border border-white/5",
+                    stat.bg
+                  )}
+                >
+                  <CardContent className="p-0 text-center">
+                    <div
+                      className={cn(
+                        "mx-auto w-8 h-8 rounded-xl flex items-center justify-center mb-2",
+                        stat.color
+                      )}
+                    >
+                      <stat.icon className="h-4 w-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-foreground">{stat.value}</p>
+                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+                      {stat.label}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             {/* App Info */}
-            <div className="rounded-lg bg-muted p-4">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <SiStackoverflow className="h-4 w-4" />
-                <span>StackTok v1.0.0</span>
+            <div className="rounded-2xl bg-accent-muted/50 p-5 border border-white/5">
+              <div className="flex items-center justify-center gap-2.5 text-sm text-muted-foreground/70">
+                <SiStackoverflow className="h-4 w-4 text-primary" />
+                <span>StackScroll v1.1.0</span>
               </div>
             </div>
 
             {/* Logout Button */}
-            <Button 
-              variant="destructive" 
-              className="w-full"
+            <Button
+              variant="destructive"
+              className={cn(
+                "w-full rounded-xl shadow-lg hover:-translate-y-0.5 transition-all",
+                "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
+              )}
               onClick={handleLogout}
             >
               <LogOut className="mr-2 h-4 w-4" />
