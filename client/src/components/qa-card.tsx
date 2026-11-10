@@ -1,40 +1,90 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowBigUp,
+  ArrowRight,
+  Bookmark as BookmarkIcon,
+  Copy,
   MessageCircle,
-  Check,
+  Speaker,
+  Share2,
   ChevronDown,
   ChevronUp,
-  Heart,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { type Question } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import AnswerComposer from "@/components/answer-composer";
+
+const CATEGORY_COLORS = [
+  "bg-primary/10 text-primary border-primary/20",
+  "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+  "bg-rose-500/10 text-rose-500 border-rose-500/20",
+  "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+  "bg-purple-500/10 text-purple-500 border-purple-500/20",
+];
+
+function categoryColor(index: number) {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+}
 
 interface QACardProps {
   question: Question;
+  index?: number;
+  isActive?: boolean;
 }
 
-const VOTE_COLORS = [
-  { from: "from-primary", to: "to-primary/80" },
-  { from: "from-accent", to: "to-accent/80" },
-  { from: "from-emerald-500", to: "to-emerald-400" },
-  { from: "from-amber-500", to: "to-amber-400" },
-  { from: "from-cyan-500", to: "to-cyan-400" },
-];
-
-function voteGradient(index: number) {
-  return VOTE_COLORS[index % VOTE_COLORS.length];
-}
-
-export default function QACard({ question }: QACardProps) {
-  const [showAnswers, setShowAnswers] = useState(false);
+export default function QACard({ question, index, isActive = true }: QACardProps) {
   const [upvoted, setUpvoted] = useState(false);
-  const [favorited, setFavorited] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
   const [currentScore, setCurrentScore] = useState(question.score);
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [answerText, setAnswerText] = useState("");
+
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const answers = Array.isArray(question.answers) ? question.answers : [];
+  const categoryColorClass = categoryColor(question.id);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`bookmark_${question.id}`);
+    setBookmarked(saved === "true");
+  }, [question.id]);
+
+  useEffect(() => {
+    synthRef.current = window.speechSynthesis;
+    return () => {
+      if (synthRef.current) synthRef.current.cancel();
+    };
+  }, []);
+
+  const speak = useCallback(() => {
+    if (!synthRef.current) return;
+    synthRef.current.cancel();
+    const text = `${question.title}. ${question.body.replace(/<[^>]*>/g, " ")}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    utteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
+  }, [question.title, question.body]);
+
+  const stopSpeaking = useCallback(() => {
+    if (synthRef.current) synthRef.current.cancel();
+    setIsSpeaking(false);
+  }, []);
 
   const handleUpvote = () => {
     setUpvoted((prev) => {
@@ -44,196 +94,311 @@ export default function QACard({ question }: QACardProps) {
     });
   };
 
-  const answers = Array.isArray(question.answers) ? question.answers : [];
-  const gradient = voteGradient(question.id);
+  const handleBookmark = () => {
+    const next = !bookmarked;
+    setBookmarked(next);
+    localStorage.setItem(`bookmark_${question.id}`, String(next));
+  };
+
+  const handleShare = async () => {
+    try {
+      if (typeof navigator?.share === "function") {
+        await navigator.share({
+          title: question.title,
+          text: question.body.replace(/<[^>]*>/g, " ").slice(0, 200),
+          url: window.location.origin,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.origin);
+      }
+    } catch {
+      // Share cancelled or failed
+    }
+  };
+
+  const handleAnswerSubmit = (text: string) => {
+    setAnswerText(text);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="absolute inset-0 p-3 sm:p-4 lg:p-6"
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      className="relative h-full w-full flex flex-col"
     >
-      {/* Floating action column — mobile/tablet only */}
-      <div className={cn(
-        "fixed z-20 flex flex-col gap-1.5 sm:gap-2",
-        "block lg:hidden",
-        "bottom-1/3 sm:bottom-1/2 right-2 sm:right-4"
-      )}
-      >
-        <motion.div
-          whileTap={{ scale: 0.9 }}
-          animate={{
-            scale: favorited ? 1.1 : 1,
-            rotate: favorited ? 360 : 0,
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        >
-          <Button
-            variant="outline"
-            size="icon"
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg transition-all hover:bg-accent/10"
-            onClick={() => setFavorited((f) => !f)}
-          >
-            <Heart
-              className={cn(
-                "h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300",
-                favorited && "fill-accent-foreground text-accent-foreground drop-shadow-[0_0_8px_hsl(var(--accent-glow))]"
-              )}
-            />
-          </Button>
-        </motion.div>
-      </div>
-
-      <Card
-        className={cn(
-          // Don't force full height on desktop — let content breathe
-          "h-full overflow-y-auto glass rounded-2xl border border-white/10 shadow-2xl card-hover",
-          "bg-gradient-to-b from-card/90 to-muted/40",
-          // Right padding so content doesn't hide under side buttons on mobile
-          "pr-14 sm:pr-20"
-        )}
-      >
-        <CardHeader className="bg-transparent border-b border-white/5 pb-3 sm:pb-4 lg:pb-5">
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-            <Avatar className={cn(
-              "h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 border-2 border-white/10 ring-2 ring-white/5"
-            )}
-            >
-              <AvatarFallback className={cn(
-                "bg-gradient-to-br from-primary to-accent text-foreground",
-                "text-xs sm:text-sm lg:text-base"
-              )}
-              >
+      {/* Main question content — left/center */}
+      <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
+        <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 border-white ring-2 ring-primary/20">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm sm:text-base font-bold">
                 {question.authorName?.[0]}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <CardTitle className={cn(
-                "text-sm sm:text-base lg:text-lg font-semibold leading-none",
-                gradient
-              )}>
+              <CardTitle className="text-sm sm:text-base font-semibold leading-none">
                 {question.authorName}
               </CardTitle>
-              <p className="text-[10px] sm:text-xs text-muted-foreground/70 tracking-wide uppercase">
-                Score: {currentScore}
-              </p>
+              <span className="text-[10px] sm:text-xs text-muted-foreground tracking-wide uppercase">
+                {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
             </div>
           </div>
-        </CardHeader>
+          <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium border", categoryColorClass)}>
+            Stack Overflow
+          </span>
+        </div>
 
-        <CardContent className="space-y-4 pt-2 sm:pt-3 lg:pt-4">
-          <h2 className={cn(
-            "text-base sm:text-lg lg:text-xl font-bold text-foreground leading-snug text-balance"
-          )}>
-            {question.title}
-          </h2>
+        <h2 className={cn("text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-snug mb-5 sm:mb-7 text-balance")}>
+          {question.title}
+        </h2>
 
-          <div
-            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert text-muted-foreground/90 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: question.body }}
+        <div
+          className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-muted-foreground/90 leading-relaxed mb-8 sm:mb-10"
+          dangerouslySetInnerHTML={{ __html: question.body }}
+        />
+
+        {/* Bottom content area — answer button + info */}
+        <div className="flex items-center justify-between gap-4 sm:gap-6 pt-6 sm:pt-8 border-t border-white/10">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="default"
+              size="lg"
+              className="flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+              onClick={() => setShowAnswers(!showAnswers)}
+            >
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              {showAnswers ? "Hide Answers" : "Answer Question"}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base">
+            <span className="font-medium text-foreground">
+              {answers.length} Answer{answers.length !== 1 ? "s" : ""}
+            </span>
+            <span className="text-muted-foreground/60">
+              • {currentScore} votes
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Vertical action rail — right side */}
+      <div className="hidden sm:flex flex-col items-center justify-center gap-3 sm:gap-4 w-20 sm:w-24 border-l border-white/20 p-2 sm:p-3">
+        <div className="flex flex-col items-center gap-1">
+          <Avatar className="h-10 w-10 rounded-full border-2 border-white/50 bg-secondary">
+            <AvatarFallback className="text-xs font-bold text-foreground">
+              {question.authorName?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-[10px] font-medium text-foreground/70 leading-tight">
+            {question.authorName}
+          </span>
+        </div>
+
+        <Button
+          variant={upvoted ? "default" : "outline"}
+          size="icon"
+          className={cn(
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+            upvoted
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleUpvote}
+        >
+          <ArrowBigUp className={cn("h-5 w-5 sm:h-6 sm:w-6", upvoted && "translate-y-[-1px]")} />
+          <span className="sr-only">Upvote</span>
+        </Button>
+
+        <span className={cn(
+          "text-xs sm:text-sm font-semibold",
+          upvoted ? "text-primary" : "text-muted-foreground"
+        )}>
+          {currentScore}
+        </span>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={() => setShowAnswers(!showAnswers)}
+        >
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={isSpeaking ? stopSpeaking : speak}
+        >
+          {isSpeaking ? (
+            <VolumeX className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+          ) : (
+            <Speaker className="h-5 w-5 sm:h-6 sm:w-6" />
+          )}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+            bookmarked
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleBookmark}
+        >
+          <BookmarkIcon
+            className={cn("h-5 w-5 sm:h-6 sm:w-6", bookmarked && "fill-primary-foreground")}
+            fill={bookmarked ? "currentColor" : "none"}
           />
+        </Button>
 
-          <div className="flex items-center gap-2 pt-2 sm:pt-3 lg:pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "glass flex-1 lg:max-w-[200px] px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition-all group hover:bg-accent/5 hover:text-accent-foreground",
-                "border-border/50"
-              )}
-              onClick={() => setShowAnswers((s) => !s)}
-            >
-              <MessageCircle className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4 group-hover:text-accent-foreground transition-colors" />
-              {answers.length} Answers
-              {showAnswers ? (
-                <ChevronUp className="ml-1.5 sm:ml-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
-              ) : (
-                <ChevronDown className="ml-1.5 sm:ml-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
-              )}
-            </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleShare}
+        >
+          <Share2 className="h-5 w-5 sm:h-6 sm:w-6" />
+        </Button>
+      </div>
 
-            {/* Desktop-only favorite in bottom row */}
-            <div className="hidden lg:flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-full shadow-lg transition-all hover:bg-accent/10"
-                onClick={() => setFavorited((f) => !f)}
-              >
-                <Heart
-                  className={cn(
-                    "h-5 w-5 transition-all duration-300",
-                    favorited && "fill-accent-foreground text-accent-foreground drop-shadow-[0_0_8px_hsl(var(--accent-glow))]"
-                  )}
-                />
-              </Button>
-            </div>
+      {/* Mobile action rail — bottom */}
+      <div className="sm:hidden flex items-center justify-between gap-2 px-4 sm:px-6 pb-4 sm:pb-6">
+        <Button
+          variant={upvoted ? "default" : "outline"}
+          size="icon"
+          className={cn(
+            "w-10 h-10 rounded-xl transition-all duration-200",
+            upvoted
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleUpvote}
+        >
+          <ArrowBigUp className={cn("h-5 w-5", upvoted && "translate-y-[-1px]")} />
+          <span className="sr-only">Upvote</span>
+        </Button>
 
-            <Button
-              variant={upvoted ? "default" : "outline"}
-              size="sm"
-              className={cn(
-                "px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200",
-                upvoted
-                  ? "bg-gradient-to-b from-primary to-accent text-primary-foreground"
-                  : "glass border-border/50 hover:bg-accent/5"
-              )}
-            >
-              <ArrowBigUp
+        <Button
+          variant={upvoted ? "default" : "outline"}
+          size="icon"
+          className={cn(
+            "w-10 h-10 rounded-xl transition-all duration-200",
+            upvoted
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={() => setShowAnswers(!showAnswers)}
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span className="text-[10px] font-medium">{currentScore}</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 rounded-xl transition-all duration-200",
+            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={isSpeaking ? stopSpeaking : speak}
+        >
+          {isSpeaking ? <VolumeX className="h-5 w-5 animate-pulse" /> : <Speaker className="h-5 w-5" />}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 rounded-xl transition-all duration-200",
+            bookmarked ? "bg-primary text-primary-foreground border-primary" : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleBookmark}
+        >
+          <BookmarkIcon
+            className={cn("h-5 w-5", bookmarked && "fill-primary-foreground")}
+            fill={bookmarked ? "currentColor" : "none"}
+          />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "w-10 h-10 rounded-xl transition-all duration-200",
+            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+          )}
+          onClick={handleShare}
+        >
+          <Share2 className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Answers section */}
+      <AnimatePresence mode="wait">
+        {showAnswers && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 space-y-3 sm:space-y-4"
+          >
+            {answers.map((answer: any) => (
+              <Card
+                key={answer.answer_id}
                 className={cn(
-                  "mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4 transition-transform",
-                  upvoted && "transform -translate-y-0.5"
+                  "rounded-xl border-white/10 bg-secondary/50",
+                  answer.is_accepted && "border-primary/30 bg-primary/5"
                 )}
-              />
-              {currentScore}
-            </Button>
-          </div>
-
-          <AnimatePresence>
-            {showAnswers && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-3"
               >
-                {answers.map((answer: any) => (
-                  <Card
-                    key={answer.answer_id}
-                    className={cn(
-                      "rounded-xl border border-white/5 bg-gradient-to-b from-background/50 to-muted/20",
-                      answer.is_accepted && "border-accent/30"
+                <CardContent className="p-3 sm:p-4 space-y-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {answer.is_accepted && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        Accepted
+                      </span>
                     )}
-                  >
-                    <CardContent className="p-3 sm:p-3.5 space-y-2">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        {answer.is_accepted && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                            <span>Accepted Answer</span>
-                          </div>
-                        )}
-                        <span className="text-sm font-medium text-primary/80">
-                          {answer.owner.display_name}
-                        </span>
-                      </div>
-                      <div
-                        className="prose prose-xs sm:prose-sm lg:prose-base max-w-none dark:prose-invert text-muted-foreground/90 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: answer.body }}
-                      />
-                      <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground/70">
-                        <ArrowBigUp className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                        {answer.score} points
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+                    <span className="text-sm sm:text-base font-semibold text-foreground">
+                      {answer.owner?.display_name || "Anonymous"}
+                    </span>
+                  </div>
+                  <div
+                    className="prose prose-xs sm:prose-sm lg:prose-base max-w-none text-muted-foreground/90 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: answer.body }}
+                  />
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                    <ArrowBigUp className="h-3 w-3" />
+                    <span>{answer.score}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            <AnswerComposer
+              questionId={question.id}
+              onAnswerSubmit={handleAnswerSubmit}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

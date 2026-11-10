@@ -1,17 +1,26 @@
-import { questions, type Question, type InsertQuestion } from "@shared/schema";
+import { questions, bookmarks, type Question, type InsertQuestion, type Bookmark, type InsertBookmark } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getQuestions(page: number): Promise<Question[]>;
   createQuestion(question: InsertQuestion): Promise<Question>;
+  getBookmarks(userId: number): Promise<Bookmark[]>;
+  createBookmark(bookmark: InsertBookmark): Promise<Bookmark>;
+  deleteBookmark(id: number): Promise<void>;
+  isBookmarked(userId: number, questionId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private questions: Map<number, Question>;
+  private bookmarks: Map<number, Bookmark>;
   currentId: number;
+  bookmarkId: number;
 
   constructor() {
     this.questions = new Map();
+    this.bookmarks = new Map();
     this.currentId = 1;
+    this.bookmarkId = 1;
 
     // Initialize with dummy data
     const dummyQuestions: InsertQuestion[] = [
@@ -189,6 +198,27 @@ export class MemStorage implements IStorage {
     const question: Question = { ...insertQuestion, id };
     this.questions.set(id, question);
     return question;
+  }
+
+  async getBookmarks(userId: number): Promise<Bookmark[]> {
+    return Array.from(this.bookmarks.values()).filter(b => b.userId === userId);
+  }
+
+  async createBookmark(insertBookmark: InsertBookmark): Promise<Bookmark> {
+    const id = this.bookmarkId++;
+    const bookmark: Bookmark = { ...insertBookmark, id, createdAt: new Date() };
+    this.bookmarks.set(id, bookmark);
+    return bookmark;
+  }
+
+  async deleteBookmark(id: number): Promise<void> {
+    this.bookmarks.delete(id);
+  }
+
+  async isBookmarked(userId: number, questionId: number): Promise<boolean> {
+    return Array.from(this.bookmarks.values()).some(
+      b => b.userId === userId && b.questionId === questionId
+    );
   }
 }
 

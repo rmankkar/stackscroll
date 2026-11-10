@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { getUser, logout } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LogOut,
   User,
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { SiStackoverflow } from "react-icons/si";
 import { cn } from "@/lib/utils";
-import BackgroundBlobs from "@/components/background-blobs";
 
 interface UserProfile {
   name?: string;
@@ -62,53 +61,50 @@ export default function Profile() {
       icon: ArrowBigUp,
       label: "Votes",
       value: "0",
-      color: "text-primary shadow-primary/25",
+      color: "text-primary shadow-primary/20",
       bg: "bg-primary/10",
     },
     {
       icon: MessageCircle,
-      label: "Comments",
+      label: "Answers",
       value: "0",
-      color: "text-accent shadow-accent/25",
-      bg: "bg-accent/10",
+      color: "text-blue-500 shadow-blue-500/20",
+      bg: "bg-blue-500/10",
     },
     {
       icon: Zap,
       label: "Activity",
       value: "0",
-      color: "text-yellow-400 shadow-yellow-500/25",
+      color: "text-yellow-500 shadow-yellow-500/20",
       bg: "bg-yellow-500/10",
     },
     {
       icon: Bookmark,
       label: "Bookmarks",
       value: "0",
-      color: "text-cyan-400 shadow-cyan-500/25",
-      bg: "bg-cyan-500/10",
+      color: "text-primary shadow-primary/20",
+      bg: "bg-primary/10",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden px-4 sm:px-6 lg:px-8 pb-12">
-      <BackgroundBlobs />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="relative z-10 max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto"
       >
-        <Card className="glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+        <Card className="rounded-3xl border-white shadow-sm overflow-hidden">
           <CardHeader className="bg-transparent text-center pb-8 sm:pb-10 pt-8 sm:pt-10">
             <div className="flex justify-center mb-4 sm:mb-6">
               <div
                 className={cn(
                   "relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center",
-                  "bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 ring-4 ring-white/10"
+                  "bg-primary/10 shadow-lg shadow-primary/20 ring-4 ring-white"
                 )}
               >
-                <Avatar className={cn("w-22 h-22 sm:w-26 sm:h-26 lg:w-28 lg:h-28 border-2 border-white/5")}
-                >
+                <Avatar className="w-22 h-22 sm:w-26 sm:h-26 lg:w-28 lg:h-28 border-2 border-white/5">
                   {user.picture ? (
                     <AvatarImage src={user.picture} alt={user.name} />
                   ) : (
@@ -137,7 +133,7 @@ export default function Profile() {
                 <Card
                   key={stat.label}
                   className={cn(
-                    "rounded-2xl p-4 sm:p-6 glass border border-white/5",
+                    "rounded-2xl p-4 sm:p-6 border-white/10",
                     stat.bg
                   )}
                 >
@@ -160,7 +156,7 @@ export default function Profile() {
             </div>
 
             {/* App Info */}
-            <div className="rounded-2xl bg-accent-muted/50 p-5 border border-white/5">
+            <div className="rounded-2xl bg-secondary border border-white/20 p-5">
               <div className="flex items-center justify-center gap-2.5 text-sm text-muted-foreground/70">
                 <SiStackoverflow className="h-4 w-4 text-primary" />
                 <span>StackScroll v1.1.0</span>
@@ -171,7 +167,7 @@ export default function Profile() {
             <Button
               variant="destructive"
               className={cn(
-                "w-full rounded-xl shadow-lg hover:-translate-y-0.5 transition-all",
+                "w-full rounded-xl shadow-sm hover:-translate-y-0.5 transition-all",
                 "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
               )}
               onClick={handleLogout}

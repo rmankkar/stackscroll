@@ -4,43 +4,37 @@
 
 @layer base {
   :root {
-    /* Deep, vibrant dark base */
-    --background: 222.2 47.4% 6.2%;
-    --foreground: 210 40% 98%;
+    /* Clean light background */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    /* Exciting primary: electric violet */
-    --primary: 263.4 70% 50.4%;
+    /* Primary accent: indigo/violet */
+    --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
-    --primary-glow: 263.4 70% 50.4% / 0.35;
 
-    /* Secondary accents */
-    --secondary: 240 4.8% 15.9%;
-    --secondary-foreground: 240 5.9% 90.9%;
+    /* Secondary: light gray surface */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
 
-    /* Vivid accent: electric rose */
-    --accent: 341.4 84.2% 59.6%;
+    /* Muted: light gray text */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent: same as primary for a single-color accent system */
+    --accent: 262 83% 58%;
     --accent-foreground: 210 40% 98%;
-    --accent-glow: 341.4 84.2% 59.6% / 0.35;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --muted: 240 3.7% 14.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
 
-    --accent-muted: 240 5% 16%;
+    --radius: 0.75rem;
 
-    --popover: 222.2 47.4% 6.2%;
-    --popover-foreground: 210 40% 98%;
-
-    --card: 222.2 47.4% 8%;
-    --card-foreground: 210 40% 98%;
-
-    --border: 240 3.7% 19.9%;
-    --input: 240 3.7% 19.9%;
-    --ring: 263.4 70% 50.4%;
-
-    --radius: 1.25rem;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
   }
 
   * {
@@ -52,39 +46,35 @@
     overflow-x: hidden;
   }
 
-  /* Smooth, minimal focus states */
+  /* Smooth focus states */
   *:focus-visible {
     outline: none;
-    ring: 2px solid hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
 @layer components {
-  /* Glassmorphism surface */
-  .glass {
-    @apply bg-white/5 border-white/10 backdrop-blur-md;
+  /* Clean card surface */
+  .card-surface {
+    @apply bg-card border border-white rounded-2xl shadow-sm;
   }
 
-  /* Gradient text utility */
+  /* Gradient text for app name only */
   .gradient-text {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--accent)) 100%
-    );
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(280 92% 65%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Vibrant card hover lift */
-  .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-12px_hsl(var(--primary-glow))];
-  }
-
-  /* Subtle inner glow ring */
-  .inner-glow {
-    box-shadow: inset 0 0 20px hsl(var(--primary-glow));
+  /* Subtle hover lift */
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5;
   }
 }
 
@@ -104,9 +94,8 @@
 }
 
 @layer base {
-  /* Animated selection */
   ::selection {
-    background: hsl(var(--primary) / 0.4);
+    background: hsl(var(--primary) / 0.2);
     color: hsl(var(--primary-foreground));
   }
 }
