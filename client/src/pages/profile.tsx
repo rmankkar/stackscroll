@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SiStackoverflow } from "react-icons/si";
 import { cn } from "@/lib/utils";
+import BackgroundBlobs from "@/components/background-blobs";
 
 interface UserProfile {
   name?: string;
@@ -88,65 +89,69 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden px-4 sm:px-6 pb-12">
+    <div className="min-h-screen bg-background relative overflow-hidden px-4 sm:px-6 lg:px-8 pb-12">
       <BackgroundBlobs />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 max-w-md mx-auto"
+        className="relative z-10 max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto"
       >
         <Card className="glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-          <CardHeader className="bg-transparent text-center pb-8 pt-8">
-            <div className="flex justify-center mb-4">
+          <CardHeader className="bg-transparent text-center pb-8 sm:pb-10 pt-8 sm:pt-10">
+            <div className="flex justify-center mb-4 sm:mb-6">
               <div
                 className={cn(
-                  "relative w-24 h-24 rounded-full flex items-center justify-center",
+                  "relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center",
                   "bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30 ring-4 ring-white/10"
                 )}
               >
-                <Avatar className="w-22 h-22 border-2 border-white/5">
+                <Avatar className={cn("w-22 h-22 sm:w-26 sm:h-26 lg:w-28 lg:h-28 border-2 border-white/5")}
+                >
                   {user.picture ? (
                     <AvatarImage src={user.picture} alt={user.name} />
                   ) : (
-                    <AvatarFallback className="text-xl font-bold text-foreground">
+                    <AvatarFallback className={cn(
+                      "text-xl sm:text-2xl lg:text-3xl font-bold text-foreground"
+                    )}
+                    >
                       {initials}
                     </AvatarFallback>
                   )}
                 </Avatar>
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
+            <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">
               {user.name}
             </CardTitle>
-            <p className="text-muted-foreground/70 text-sm mt-2">
+            <p className="text-muted-foreground/70 text-sm sm:text-base mt-2">
               {user.email || "No email"}
             </p>
           </CardHeader>
 
-          <CardContent className="space-y-6 px-8 pb-8">
+          <CardContent className="space-y-6 px-8 sm:px-10 pb-8 sm:pb-10">
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               {stats.map((stat) => (
                 <Card
                   key={stat.label}
                   className={cn(
-                    "rounded-2xl p-4 glass border border-white/5",
+                    "rounded-2xl p-4 sm:p-6 glass border border-white/5",
                     stat.bg
                   )}
                 >
                   <CardContent className="p-0 text-center">
                     <div
                       className={cn(
-                        "mx-auto w-8 h-8 rounded-xl flex items-center justify-center mb-2",
+                        "mx-auto w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center mb-2 sm:mb-3",
                         stat.color
                       )}
                     >
-                      <stat.icon className="h-4 w-4" />
+                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-xs font-semibold text-foreground">{stat.value}</p>
-                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+                    <p className="text-xs sm:text-sm font-semibold text-foreground">{stat.value}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground/60 uppercase tracking-wider">
                       {stat.label}
                     </p>
                   </CardContent>

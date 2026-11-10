@@ -28,22 +28,22 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background relative px-4 sm:px-6 overflow-hidden">
       <BackgroundBlobs />
 
-      <div className="relative z-10 w-full max-w-sm mx-auto">
+      <div className="relative z-10 w-full max-w-sm md:max-w-md mx-auto">
         <Card className="glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-          <CardHeader className="bg-transparent text-center pb-8 pt-8">
-            <div className="flex items-center justify-center gap-2.5 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/25">
-                <SiStackoverflow className="h-5 w-5 text-white" />
+          <CardHeader className="bg-transparent text-center pb-8 sm:pb-10 pt-8 sm:pt-10">
+            <div className="flex items-center justify-center gap-2.5 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/25">
+                <SiStackoverflow className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <CardTitle className="text-2xl font-bold tracking-tight gradient-text">
+              <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight gradient-text">
                 StackScroll
               </CardTitle>
             </div>
-            <p className="text-muted-foreground/80 text-sm">
+            <p className="text-muted-foreground/80 text-sm sm:text-base">
               Browse top Stack Overflow Q&amp;A in style
             </p>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 px-8 pb-8">
+          <CardContent className="flex flex-col gap-4 px-8 sm:px-10 pb-8 sm:pb-10">
             <div className="space-y-3">
               <Button
                 size="lg"

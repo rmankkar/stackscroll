@@ -46,37 +46,40 @@ export default function Feed() {
 
   const question = questions?.[page - 1];
   const hasMore = Boolean(questions?.[page]);
+  const isMobile = window.innerWidth < 768;
 
   return (
     <div className="h-screen w-full overflow-hidden bg-background relative">
       <BackgroundBlobs />
 
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 py-4 sm:px-7 sm:py-6">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-accent shadow-[0_0_12px_hsl(var(--accent-glow))] animate-pulse-soft" />
-          <span className="text-sm font-medium text-foreground tracking-tight text-balance">
-            StackScroll
-          </span>
+      {/* Top bar — app name centered, profile on right */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-2 h-2 rounded-full bg-accent shadow-[0_0_12px_hsl(var(--accent-glow))] animate-pulse-soft" />
+            <span className="text-xs sm:text-sm font-medium text-foreground tracking-tight">
+              StackScroll
+            </span>
+          </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="glass w-10 h-10 rounded-full hover:bg-accent/10 text-accent-foreground"
+          className="glass w-9 h-9 sm:w-10 sm:h-10 rounded-full hover:bg-accent/10 text-accent-foreground shrink-0"
           onClick={() => setLocation("/profile")}
         >
-          <User className="h-5 w-5" />
+          <User className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
       </div>
 
-      <main className="relative z-10 h-full w-full">
+      <main className="relative z-10 h-full w-full pt-16 sm:pt-20 lg:pt-24">
         <AnimatePresence>
           <motion.div
             {...bind()}
             style={{
               transform: y.to((py) => `translateY(${py}px)`),
             }}
-            className="h-full w-full touch-none flex items-center justify-center px-3 sm:px-6"
+            className="h-full w-full touch-none flex items-center justify-center px-4 sm:px-6 lg:px-12"
           >
             {question && (
               <motion.div
@@ -85,25 +88,25 @@ export default function Feed() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                className="w-full max-w-md sm:max-w-lg touch-none"
+                className="relative h-full w-full sm:w-[500px] touch-none"
               >
                 <QACard question={question} />
 
                 {/* Page indicator */}
                 {questions && questions.length > 0 && (
-                  <div className="mt-6 flex w-full justify-center gap-2 px-4 sm:px-6">
+                  <div className="mt-6 sm:mt-8 flex w-full justify-center gap-2 sm:gap-3 px-4 sm:px-6">
                     {Array.from({ length: Math.min(questions.length, 5) }).map((_, i) => (
                       <div
                         key={i}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
                           i === page - 1
-                            ? "w-8 bg-gradient-to-r from-primary to-accent shadow-[0_0_10px_hsl(var(--primary-glow))]"
-                            : "bg-border/50"
+                            ? "w-8 sm:w-12 bg-gradient-to-r from-primary to-accent shadow-[0_0_10px_hsl(var(--primary-glow))]"
+                            : "w-2.5 sm:w-2.5 bg-border/50"
                         }`}
                       />
                     ))}
                     {hasMore && (
-                      <div className="w-2 h-2 rounded-full bg-border/50 animate-pulse-soft" />
+                      <div className="h-1.5 w-2.5 sm:w-2.5 rounded-full bg-border/50 animate-pulse-soft" />
                     )}
                   </div>
                 )}
@@ -113,45 +116,73 @@ export default function Feed() {
         </AnimatePresence>
 
         {/* Swipe hint (mobile only) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 sm:hidden">
+        <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 sm:hidden">
           <div className="w-3 h-0.5 bg-border/50 rounded-full" />
           <p className="text-[10px] text-muted-foreground/70 tracking-widest uppercase">
             swipe to browse
           </p>
         </div>
+
+        {/* Mobile bottom action bar */}
+        {question && isMobile && (
+          <div className="absolute bottom-[10%] left-0 right-0 z-20 px-5 flex justify-between">
+            <BookmarkButton questionId={question.id} className="w-10 h-10 rounded-2xl" />
+            <ShareButton question={question} className="w-10 h-10 rounded-2xl" />
+          </div>
+        )}
       </main>
 
-      {/* Bottom action bar (desktop / wider screens) */}
-      {question && window.innerWidth >= 768 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-          <BookmarkButton questionId={question.id} />
-          <ShareButton question={question} />
+      {/* Bottom action bar (desktop only) */}
+      {question && !isMobile && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-4">
+          <BookmarkButton questionId={question.id} className="w-11 h-11 rounded-2xl" />
+          <ShareButton question={question} className="w-11 h-11 rounded-2xl" />
         </div>
       )}
     </div>
   );
 }
 
-function BookmarkButton({ questionId }: { questionId: number }) {
+function cn(...classes: (string | undefined | null | boolean)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function BookmarkButton({
+  questionId,
+  className,
+}: { questionId: number; className?: string }) {
   const [saved, setSaved] = useState(false);
   return (
     <Button
       variant="outline"
       size="icon"
-      className="glass w-11 h-11 rounded-2xl shadow-lg hover:bg-accent/10 hover:-translate-y-1 transition-all"
+      className={cn(
+        "glass shadow-lg hover:bg-accent/10 hover:-translate-y-0.5 transition-all",
+        className
+      )}
       onClick={() => setSaved(!saved)}
     >
-      <Bookmark className={`h-5 w-5 transition-colors ${saved ? "text-accent-foreground" : "text-muted-foreground"}`} />
+      <Bookmark
+        className={`h-4 w-4 sm:h-5 sm:w-5 transition-colors ${
+          saved ? "text-accent-foreground" : "text-muted-foreground"
+        }`}
+      />
     </Button>
   );
 }
 
-function ShareButton({ question }: { question: Question }) {
+function ShareButton({
+  question,
+  className,
+}: { question: Question; className?: string }) {
   return (
     <Button
       variant="outline"
       size="icon"
-      className="glass w-11 h-11 rounded-2xl shadow-lg hover:bg-primary/10 hover:-translate-y-1 transition-all"
+      className={cn(
+        "glass shadow-lg hover:bg-primary/10 hover:-translate-y-0.5 transition-all",
+        className
+      )}
       onClick={() => {
         if (typeof navigator?.share === "function") {
           navigator.share({
@@ -161,7 +192,7 @@ function ShareButton({ question }: { question: Question }) {
         }
       }}
     >
-      <Share2 className="h-5 w-5 text-muted-foreground" />
+      <Share2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
     </Button>
   );
 }
