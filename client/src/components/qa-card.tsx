@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowBigUp,
-  ArrowRight,
   Bookmark as BookmarkIcon,
   Copy,
   MessageCircle,
@@ -156,198 +155,93 @@ export default function QACard({ question, index, isActive = true }: QACardProps
         </h2>
 
         <div
-          className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-muted-foreground/90 leading-relaxed mb-8 sm:mb-10"
+          className="prose prose-sm sm:prose-base lg:prose-lg text-muted-foreground/90 leading-relaxed mb-8 sm:mb-10 overflow-x-auto break-words"
           dangerouslySetInnerHTML={{ __html: question.body }}
         />
 
-        {/* Bottom content area — answer button + info */}
+        {/* Bottom action row — all icons horizontal on both mobile and desktop */}
         <div className="flex items-center justify-between gap-4 sm:gap-6 pt-6 sm:pt-8 border-t border-white/10">
+          {/* Left: Upvote + score */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
-              variant="default"
-              size="lg"
-              className="flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+              variant={upvoted ? "default" : "outline"}
+              size="icon"
+              className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+                upvoted
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                  : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+              )}
+              onClick={handleUpvote}
+            >
+              <ArrowBigUp className={cn("h-5 w-5 sm:h-6 sm:w-6", upvoted && "translate-y-[-1px]")} />
+              <span className="sr-only">Upvote</span>
+            </Button>
+            <span className={cn(
+              "text-xs sm:text-sm font-semibold",
+              upvoted ? "text-primary" : "text-muted-foreground"
+            )}>
+              {currentScore}
+            </span>
+          </div>
+
+          {/* Right: Answer, Hear, Bookmark, Share */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+                "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+              )}
               onClick={() => setShowAnswers(!showAnswers)}
             >
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-              {showAnswers ? "Hide Answers" : "Answer Question"}
+              <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+                "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+              )}
+              onClick={isSpeaking ? stopSpeaking : speak}
+            >
+              {isSpeaking ? (
+                <VolumeX className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
+              ) : (
+                <Speaker className="h-5 w-5 sm:h-6 sm:w-6" />
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+                bookmarked
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+              )}
+              onClick={handleBookmark}
+            >
+              <BookmarkIcon
+                className={cn("h-5 w-5 sm:h-6 sm:w-6", bookmarked && "fill-primary-foreground")}
+                fill={bookmarked ? "currentColor" : "none"}
+              />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
+                "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
+              )}
+              onClick={handleShare}
+            >
+              <Share2 className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base">
-            <span className="font-medium text-foreground">
-              {answers.length} Answer{answers.length !== 1 ? "s" : ""}
-            </span>
-            <span className="text-muted-foreground/60">
-              • {currentScore} votes
-            </span>
-          </div>
         </div>
-      </div>
-
-      {/* Vertical action rail — right side */}
-      <div className="hidden sm:flex flex-col items-center justify-center gap-3 sm:gap-4 w-20 sm:w-24 border-l border-white/20 p-2 sm:p-3">
-        <div className="flex flex-col items-center gap-1">
-          <Avatar className="h-10 w-10 rounded-full border-2 border-white/50 bg-secondary">
-            <AvatarFallback className="text-xs font-bold text-foreground">
-              {question.authorName?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-[10px] font-medium text-foreground/70 leading-tight">
-            {question.authorName}
-          </span>
-        </div>
-
-        <Button
-          variant={upvoted ? "default" : "outline"}
-          size="icon"
-          className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
-            upvoted
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleUpvote}
-        >
-          <ArrowBigUp className={cn("h-5 w-5 sm:h-6 sm:w-6", upvoted && "translate-y-[-1px]")} />
-          <span className="sr-only">Upvote</span>
-        </Button>
-
-        <span className={cn(
-          "text-xs sm:text-sm font-semibold",
-          upvoted ? "text-primary" : "text-muted-foreground"
-        )}>
-          {currentScore}
-        </span>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
-            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={() => setShowAnswers(!showAnswers)}
-        >
-          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
-            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={isSpeaking ? stopSpeaking : speak}
-        >
-          {isSpeaking ? (
-            <VolumeX className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
-          ) : (
-            <Speaker className="h-5 w-5 sm:h-6 sm:w-6" />
-          )}
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
-            bookmarked
-              ? "bg-primary text-primary-foreground border-primary"
-              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleBookmark}
-        >
-          <BookmarkIcon
-            className={cn("h-5 w-5 sm:h-6 sm:w-6", bookmarked && "fill-primary-foreground")}
-            fill={bookmarked ? "currentColor" : "none"}
-          />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-200",
-            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleShare}
-        >
-          <Share2 className="h-5 w-5 sm:h-6 sm:w-6" />
-        </Button>
-      </div>
-
-      {/* Mobile action rail — bottom */}
-      <div className="sm:hidden flex items-center justify-between gap-2 px-4 sm:px-6 pb-4 sm:pb-6">
-        <Button
-          variant={upvoted ? "default" : "outline"}
-          size="icon"
-          className={cn(
-            "w-10 h-10 rounded-xl transition-all duration-200",
-            upvoted
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleUpvote}
-        >
-          <ArrowBigUp className={cn("h-5 w-5", upvoted && "translate-y-[-1px]")} />
-          <span className="sr-only">Upvote</span>
-        </Button>
-
-        <Button
-          variant={upvoted ? "default" : "outline"}
-          size="icon"
-          className={cn(
-            "w-10 h-10 rounded-xl transition-all duration-200",
-            upvoted
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={() => setShowAnswers(!showAnswers)}
-        >
-          <MessageCircle className="h-5 w-5" />
-          <span className="text-[10px] font-medium">{currentScore}</span>
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 rounded-xl transition-all duration-200",
-            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={isSpeaking ? stopSpeaking : speak}
-        >
-          {isSpeaking ? <VolumeX className="h-5 w-5 animate-pulse" /> : <Speaker className="h-5 w-5" />}
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 rounded-xl transition-all duration-200",
-            bookmarked ? "bg-primary text-primary-foreground border-primary" : "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleBookmark}
-        >
-          <BookmarkIcon
-            className={cn("h-5 w-5", bookmarked && "fill-primary-foreground")}
-            fill={bookmarked ? "currentColor" : "none"}
-          />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "w-10 h-10 rounded-xl transition-all duration-200",
-            "border-white/30 text-foreground/80 hover:bg-primary/5 hover:text-primary",
-          )}
-          onClick={handleShare}
-        >
-          <Share2 className="h-5 w-5" />
-        </Button>
       </div>
 
       {/* Answers section */}
@@ -381,7 +275,7 @@ export default function QACard({ question, index, isActive = true }: QACardProps
                     </span>
                   </div>
                   <div
-                    className="prose prose-xs sm:prose-sm lg:prose-base max-w-none text-muted-foreground/90 leading-relaxed"
+                    className="prose prose-xs sm:prose-sm lg:prose-base text-muted-foreground/90 leading-relaxed overflow-x-auto break-words"
                     dangerouslySetInnerHTML={{ __html: answer.body }}
                   />
                   <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
