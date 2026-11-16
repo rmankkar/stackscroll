@@ -64,6 +64,28 @@ export default function Feed() {
 
   return (
     <div className="h-screen w-full bg-background overflow-hidden relative">
+      {/* Left decorative panel — desktop only */}
+      <div className="fixed inset-y-0 left-0 w-[180px] hidden sm:flex flex-col items-center justify-between pointer-events-none z-[-1] px-4">
+        <div className="mt-28">
+          <div className="h-[360px] w-[160px] bg-gradient-to-b from-primary/40 via-transparent to-transparent rounded-full blur-[96px]" />
+          <div className="h-[140px] w-[90px] bg-blue-500/25 mt-10 rounded-full blur-[48px]" />
+        </div>
+        <div className="mb-28">
+          <div className="h-[240px] w-[140px] bg-purple-500/20 rounded-full blur-[64px]" />
+        </div>
+      </div>
+
+      {/* Right decorative panel — desktop only */}
+      <div className="fixed inset-y-0 right-0 w-[180px] hidden sm:flex flex-col items-center justify-between pointer-events-none z-[-1] px-4">
+        <div className="mt-24">
+          <div className="h-[400px] w-[180px] bg-gradient-to-b from-emerald-500/35 via-transparent to-transparent rounded-full blur-[112px]" />
+          <div className="h-[120px] w-[80px] bg-cyan-500/20 mt-8 rounded-full blur-[40px]" />
+        </div>
+        <div className="mb-24">
+          <div className="h-[220px] w-[140px] bg-rose-500/20 rounded-full blur-[64px]" />
+        </div>
+      </div>
+
       <Header />
 
       <main className="relative z-10 h-full w-full overflow-y-auto pb-20 sm:pb-0 lg:pb-0">

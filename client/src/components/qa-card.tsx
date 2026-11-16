@@ -34,6 +34,21 @@ function categoryColor(index: number) {
   return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 }
 
+const CATEGORY_ACCENTS = [
+  "border-primary",
+  "border-blue-500",
+  "border-emerald-500",
+  "border-amber-500",
+  "border-cyan-500",
+  "border-rose-500",
+  "border-indigo-500",
+  "border-purple-500",
+];
+
+function categoryAccent(index: number) {
+  return CATEGORY_ACCENTS[index % CATEGORY_ACCENTS.length];
+}
+
 interface QACardProps {
   question: Question;
   index?: number;
@@ -53,6 +68,7 @@ export default function QACard({ question, index, isActive = true }: QACardProps
 
   const answers = Array.isArray(question.answers) ? question.answers : [];
   const categoryColorClass = categoryColor(question.id);
+  const accentClass = categoryAccent(question.id);
 
   useEffect(() => {
     const saved = localStorage.getItem(`bookmark_${question.id}`);
@@ -125,7 +141,7 @@ export default function QACard({ question, index, isActive = true }: QACardProps
       animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 300, damping: 28 }}
-      className="relative h-full w-full flex flex-col"
+      className={cn("relative h-full w-full flex flex-col border-l-4 hover-lift hover:bg-secondary/30 transition-colors duration-200", accentClass)}
     >
       {/* Main question content — left/center */}
       <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
@@ -145,7 +161,8 @@ export default function QACard({ question, index, isActive = true }: QACardProps
               </span>
             </div>
           </div>
-          <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium border", categoryColorClass)}>
+          <span className={cn("category-pill", categoryColorClass)}>
+            <span className="category-dot bg-current" />
             Stack Overflow
           </span>
         </div>
