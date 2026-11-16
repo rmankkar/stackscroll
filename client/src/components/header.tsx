@@ -45,7 +45,7 @@ export default function Header() {
 
         {/* Search + Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-white/50 bg-secondary hover:bg-secondary/80 transition-colors">
+          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-white/50 bg-secondary hover:bg-secondary/80 transition-colors" onClick={() => setLocation("/feed")}>
             <Search className="h-4 w-4 text-foreground/60" />
             <span>Search</span>
           </button>

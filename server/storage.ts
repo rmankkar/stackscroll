@@ -1,9 +1,14 @@
 import { questions, bookmarks, type Question, type InsertQuestion, type Bookmark, type InsertBookmark } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { fetchStackOverflowQuestions, fetchStackOverflowAnswers } from "./stack-overflow";
+import {
+  fetchStackOverflowQuestions,
+  fetchStackOverflowSearch,
+  fetchStackOverflowAnswers,
+} from "./stack-overflow";
 
 export interface IStorage {
   getQuestions(page: number): Promise<Question[]>;
+  searchQuestions(query: string, page: number): Promise<Question[]>;
   createQuestion(question: InsertQuestion): Promise<Question>;
   getBookmarks(userId: number): Promise<Bookmark[]>;
   createBookmark(bookmark: InsertBookmark): Promise<Bookmark>;
@@ -14,12 +19,17 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private questions: Map<number, Question>;
   private bookmarks: Map<number, Bookmark>;
+  private searchCache: Map<string, { results: Question[]; fetchedAt: number }>;
   currentId: number;
   bookmarkId: number;
+
+  private static readonly SEARCH_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  private static readonly MAX_SEARCH_CACHE_ENTRIES = 100;
 
   constructor() {
     this.questions = new Map();
     this.bookmarks = new Map();
+    this.searchCache = new Map();
     this.currentId = 1;
     this.bookmarkId = 1;
   }
@@ -79,6 +89,92 @@ export class MemStorage implements IStorage {
         .sort((a, b) => b.score - a.score)
         .slice((page - 1) * pageSize, page * pageSize);
     }
+  }
+
+  async searchQuestions(query: string, page: number): Promise<Question[]> {
+    const pageSize = 10;
+    const cacheKey = query.trim().toLowerCase();
+
+    // Check client-side search cache first
+    const cached = this.searchCache.get(cacheKey);
+    if (cached) {
+      if (Date.now() - cached.fetchedAt < MemStorage.SEARCH_CACHE_TTL) {
+        return cached.results;
+      }
+      this.searchCache.delete(cacheKey);
+    }
+
+    try {
+      const { questions: soQuestions, hasMore } = await fetchStackOverflowSearch(
+        query,
+        page,
+        pageSize
+      );
+
+      if (soQuestions.length === 0) {
+        this.setSearchCache(cacheKey, []);
+        return [];
+      }
+
+      // Fetch answers for each question in parallel
+      const answersByQuestionId = new Map<number, any[]>();
+      await Promise.all(
+        soQuestions.map(async (q) => {
+          const answers = await fetchStackOverflowAnswers([q.question_id]);
+          answersByQuestionId.set(q.question_id, answers);
+        })
+      );
+
+      const results: Question[] = soQuestions.map((q) => ({
+        id: this.currentId++,
+        stackOverflowId: q.question_id,
+        title: q.title,
+        body: q.body,
+        score: q.score,
+        acceptedAnswerId: q.accepted_answer_id ?? null,
+        authorName: q.owner.display_name || "Unknown",
+        answers: answersByQuestionId
+          .get(q.question_id)
+          ?.map((a) => ({
+            answer_id: a.answer_id,
+            body: a.body,
+            score: a.score,
+            is_accepted: a.is_accepted,
+            owner: { display_name: a.owner.display_name || "Unknown" },
+          })) ?? [],
+      }));
+
+      // Store in memory for bookmarking and cross-page reference
+      results.forEach((q) => {
+        // Avoid duplicates if the same question was already cached
+        const exists = Array.from(this.questions.values()).some(
+          (existing) => existing.stackOverflowId === q.stackOverflowId
+        );
+        if (!exists) {
+          this.questions.set(q.id, q);
+        }
+      });
+
+      // Cache search results
+      this.setSearchCache(cacheKey, results);
+
+      return results;
+    } catch (error) {
+      console.error("Failed to search Stack Overflow API:", error);
+      return [];
+    }
+  }
+
+  private setSearchCache(key: string, results: Question[]): void {
+    if (this.searchCache.size >= MemStorage.MAX_SEARCH_CACHE_ENTRIES) {
+      const firstKey = this.searchCache.keys().next().value;
+      if (firstKey !== undefined) this.searchCache.delete(firstKey);
+    }
+    this.searchCache.set(key, { results, fetchedAt: Date.now() });
+  }
+
+  async clearSearchCache(): Promise<void> {
+    this.searchCache.clear();
   }
 
   async createQuestion(insertQuestion: InsertQuestion): Promise<Question> {

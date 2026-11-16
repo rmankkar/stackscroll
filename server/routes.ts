@@ -17,6 +17,20 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/search", async (req: Request, res: Response) => {
+    try {
+      const query = (req.query.q as string) || "";
+      const page = parseInt(req.query.page as string) || 1;
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      const questions = await storage.searchQuestions(query, page);
+      res.json(questions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to search questions" });
+    }
+  });
+
   app.post("/api/questions", async (req: Request, res: Response) => {
     try {
       const validated = insertQuestionSchema.parse(req.body);

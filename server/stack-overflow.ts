@@ -57,3 +57,14 @@ export async function fetchStackOverflowAnswers(
   );
   return data.items;
 }
+
+export async function fetchStackOverflowSearch(
+  query: string,
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{ questions: StackOverflowQuestion[]; hasMore: boolean }> {
+  const data: StackOverflowResponse<StackOverflowQuestion> = await fetchJson(
+    `${STACK_OVERFLOW_API}/search?page=${page}&pagesize=${pageSize}&order=desc&sort=relevance&q=${encodeURIComponent(query)}&intitle=${encodeURIComponent(query)}&site=stackoverflow&filter=withbody`
+  );
+  return { questions: data.items, hasMore: data.has_more };
+}
