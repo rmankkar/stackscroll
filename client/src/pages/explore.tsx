@@ -5,6 +5,7 @@ import QACard from "@/components/qa-card";
 import Header from "@/components/header";
 import BottomNav from "@/components/bottom-nav";
 import { type Question } from "@shared/schema";
+import { cn } from "@/lib/utils";
 
 // Client-side search result cache (5 min TTL, max 50 entries)
 const searchCache = new Map<string, { results: Question[]; timestamp: number }>();
@@ -41,6 +42,7 @@ export default function Explore() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
   // Debounce: update debouncedSearch 300ms after typing stops.
@@ -67,7 +69,9 @@ export default function Explore() {
       // No search term → normal feed from /api/questions
       if (!debouncedSearch) {
         try {
-          const res = await fetch(`/api/questions?page=${page}`);
+          const res = await fetch(
+            `/api/questions?page=${page}${selectedTag ? `&tag=${encodeURIComponent(selectedTag)}` : ""}`
+          );
           const data = await res.json();
           if (data.length === 0) {
             setHasMore(false);
@@ -103,7 +107,7 @@ export default function Explore() {
 
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}`
+          `/api/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}${selectedTag ? `&tag=${encodeURIComponent(selectedTag)}` : ""}`
         );
         const data = await res.json();
 
@@ -125,7 +129,23 @@ export default function Explore() {
     };
 
     fetchQuestions();
-  }, [debouncedSearch, page]);
+  }, [debouncedSearch, page, selectedTag]);
+
+  // Derive popular topic tags from the questions seen so far.
+  const tagCounts = allQuestions.reduce<Record<string, number>>((acc, q) => {
+    q.tags.forEach((t) => {
+      acc[t] = (acc[t] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const popularTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([tag]) => tag);
+
+  const displayQuestions = selectedTag
+    ? allQuestions.filter((q) => q.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase()))
+    : allQuestions;
 
   const observerRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -183,6 +203,40 @@ export default function Explore() {
               )}
             </div>
 
+            {/* Topic filter chips */}
+            <div className="mb-4 sm:mb-6">
+              <span className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground/60 mr-2 sm:mr-3">
+                Topics
+              </span>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-[10px] sm:text-xs font-medium border transition-colors",
+                    selectedTag === null
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-white/30 bg-white/10 text-muted-foreground/70 hover:bg-white/20",
+                  )}
+                >
+                  {selectedTag ? "Clear filter" : "All"}
+                </button>
+                {popularTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={cn(
+                      "px-3 py-1 rounded-md text-[10px] sm:text-xs font-medium border transition-colors",
+                      selectedTag === tag
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-white/30 bg-white/10 text-muted-foreground/70 hover:bg-white/20",
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Error state */}
             {error && (
               <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -218,10 +272,31 @@ export default function Explore() {
                 </div>
               )}
 
+            {/* Empty feed (no data available — e.g. Stack Overflow API throttle) */}
+            {!debouncedSearch &&
+              allQuestions.length === 0 &&
+              !isSearching &&
+              !isLoadingMore &&
+              !initialLoading &&
+              !error && (
+                <div className="flex flex-col items-center justify-center py-20 sm:py-24 text-center">
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4 sm:mb-6 opacity-50">
+                    <Loader2 className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                    No questions available
+                  </h3>
+                  <p className="text-muted-foreground mt-2 sm:mt-3 max-w-xs sm:max-w-none">
+                    Feed data comes from the Stack Overflow public API. It may be temporarily
+                    unavailable — try again shortly, or switch to the Feed tab.
+                  </p>
+                </div>
+              )}
+
             {/* Question list */}
             {!debouncedSearch || allQuestions.length > 0 ? (
               <>
-                {allQuestions.map((question) => (
+                {displayQuestions.map((question) => (
                   <motion.div
                     key={question.id}
                     initial={{ opacity: 0, y: 10 }}

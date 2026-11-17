@@ -18,6 +18,7 @@ export const questions = pgTable("questions", {
   acceptedAnswerId: integer("accepted_answer_id"),
   authorName: text("author_name").notNull(),
   answers: jsonb("answers").notNull(),
+  tags: text("tags").array().notNull().default([]),
 });
 
 export const bookmarks = pgTable("bookmarks", {
@@ -41,6 +42,7 @@ export const insertQuestionSchema = createInsertSchema(questions).pick({
   acceptedAnswerId: true,
   authorName: true,
   answers: true,
+  tags: true,
 });
 
 export const insertBookmarkSchema = createInsertSchema(bookmarks).pick({

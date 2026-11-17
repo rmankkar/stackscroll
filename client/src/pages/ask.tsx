@@ -12,6 +12,7 @@ export default function Ask() {
   const [, setLocation] = useLocation();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [tags, setTags] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ export default function Ask() {
           score: 0,
           authorName: "You",
           answers: [],
+          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });
       if (response.ok) {
@@ -81,6 +83,21 @@ export default function Ask() {
                   rows={4}
                   className="text-sm sm:text-base"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm sm:text-base font-semibold text-foreground">
+                  Tags (optional, comma-separated)
+                </Label>
+                <Input
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="javascript, react, typescript"
+                  className="text-sm sm:text-base"
+                />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  e.g. javascript, react, typescript
+                </p>
               </div>
 
               <div className="flex items-center justify-between pt-4 sm:pt-6">

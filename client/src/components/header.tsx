@@ -1,10 +1,12 @@
 import { useLocation } from "wouter";
-import { Bookmark, Search, User } from "lucide-react";
+import { Bookmark, Moon, Search, Sun, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function Header() {
   const [, setLocation] = useLocation();
+  const { theme, toggle } = useTheme();
 
   const navItems = [
     { label: "Home", href: "/feed", icon: null },
@@ -51,6 +53,15 @@ export default function Header() {
           </button>
           <Button size="sm" className="hidden sm:inline-flex" onClick={() => setLocation("/ask")}>
             Ask a Question
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="rounded-lg text-foreground/60 hover:text-foreground hover:bg-secondary"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           <Button
             variant="ghost"

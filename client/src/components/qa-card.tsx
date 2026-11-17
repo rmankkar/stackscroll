@@ -171,6 +171,20 @@ export default function QACard({ question, index, isActive = true }: QACardProps
           {question.title}
         </h2>
 
+        {/* Topic tags */}
+        {question.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-5 sm:mb-7">
+            {question.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-medium border border-white/30 bg-white/10 text-muted-foreground/80"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div
           className="prose prose-sm sm:prose-base lg:prose-lg text-muted-foreground/90 leading-relaxed mb-8 sm:mb-10 overflow-x-auto break-words"
           dangerouslySetInnerHTML={{ __html: question.body }}

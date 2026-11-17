@@ -10,7 +10,8 @@ export function registerRoutes(app: Express) {
   app.get("/api/questions", async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
-      const questions = await storage.getQuestions(page);
+      const tag = (req.query.tag as string) || undefined;
+      const questions = await storage.getQuestions(page, tag);
       res.json(questions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch questions" });
@@ -21,10 +22,11 @@ export function registerRoutes(app: Express) {
     try {
       const query = (req.query.q as string) || "";
       const page = parseInt(req.query.page as string) || 1;
+      const tag = (req.query.tag as string) || undefined;
       if (!query) {
         return res.status(400).json({ message: "Search query is required" });
       }
-      const questions = await storage.searchQuestions(query, page);
+      const questions = await storage.searchQuestions(query, page, tag);
       res.json(questions);
     } catch (error) {
       res.status(500).json({ message: "Failed to search questions" });

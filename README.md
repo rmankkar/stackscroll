@@ -19,7 +19,7 @@ StackScroll turns the Stack Overflow public API into a playful, mobile-first Q&A
 
 | Release | Highlights |
 |---------|------------|
-| **v1.1.0** | 🔍 **Search with caching** — debounced search (300 ms) with a 5-minute client-side cache (50 entries max) so you never fetch the same query twice.<br/>📜 **Infinite scrolling** — the feed just keeps coming, with silky loading states.<br/>🖼️ **Decorative panels** — soft blurred background blobs on desktop for a premium, app-like feel.<br/>🔖 **Bookmarks** — save your favorite Q&As and find them anytime.<br/>🧭 **Explore tab** — a second feed view with the same infinite-scroll treatment. |
+| **v1.1.0** | 🔍 **Search with caching** — debounced search (300 ms) with a 5-minute client-side cache (50 entries max) so you never fetch the same query twice.<br/>📜 **Infinite scrolling** — the feed just keeps coming, with silky loading states.<br/>🖼️ **Decorative panels** — soft blurred background blobs on desktop for a premium, app-like feel.<br/>🔖 **Bookmarks** — save your favorite Q&As and find them anytime.<br/>🧭 **Explore tab** — a second feed view with the same infinite-scroll treatment.<br/>🌓 **Dark mode toggle** — system-aware theme with localStorage persistence.<br/>🏷️ **Tags & topic filters** — questions carry Stack Overflow tags; filter the feed by topic chips. |
 | **v1.0.0** | TikTok-style swipe feed, Stack Overflow API integration (questions + answers), upvoting, text-to-speech "Hear" button, share via Web Share API, Auth0 login, profile page, and an Ask page to post your own questions. |
 
 ---
@@ -65,6 +65,8 @@ StackScroll is a mobile web app that mimics the TikTok-style UI — vertical, ge
 | 🔥 **Live Stack Overflow data** | Fetches top-voted questions and their answers straight from the Stack Exchange API. |
 | 📜 **Infinite scrolling** | IntersectionObserver-driven pagination — the feed never runs out. |
 | 🔍 **Smart search** | Debounced (300 ms) search with a 5-minute, 50-entry client cache — instant re-results, zero wasted calls. |
+| 🌓 **Dark mode toggle** | System-aware light/dark theme, persisted to localStorage, with a one-tap switch in the header. |
+| 🏷️ **Tags & topic filters** | Questions carry Stack Overflow tags; filter the feed by topic chips in Feed and Explore. |
 | 🔖 **Bookmarks** | Save any Q&A and revisit it from the Bookmarks tab. |
 | 🧭 **Explore tab** | A dedicated discovery feed with the same infinite-scroll treatment. |
 | 🔊 **Hear it aloud** | Text-to-speech on any question — listen while you code. |
@@ -137,11 +139,11 @@ All endpoints live under `/api`.
 ## 🗺️ Roadmap
 
 - [ ] Swipe gestures (left/right) on feed cards
-- [ ] Tags & topic filters
 - [ ] Answer posting from the feed
 - [ ] Push notifications for new answers
-- [ ] Dark mode toggle
 - [ ] PWA / installable app
+
+**Just shipped** — Dark mode toggle, tags & topic filters, search caching, infinite scrolling, decorative panels, bookmarks, and the Explore tab.
 
 Have an idea? [Open an issue](https://github.com/rmankkar/stackscroll/issues/new) — we're shipping fast.
 

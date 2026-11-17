@@ -7,8 +7,8 @@ import {
 } from "./stack-overflow";
 
 export interface IStorage {
-  getQuestions(page: number): Promise<Question[]>;
-  searchQuestions(query: string, page: number): Promise<Question[]>;
+  getQuestions(page: number, tag?: string): Promise<Question[]>;
+  searchQuestions(query: string, page: number, tag?: string): Promise<Question[]>;
   createQuestion(question: InsertQuestion): Promise<Question>;
   getBookmarks(userId: number): Promise<Bookmark[]>;
   createBookmark(bookmark: InsertBookmark): Promise<Bookmark>;
@@ -34,7 +34,7 @@ export class MemStorage implements IStorage {
     this.bookmarkId = 1;
   }
 
-  async getQuestions(page: number): Promise<Question[]> {
+  async getQuestions(page: number, tag?: string): Promise<Question[]> {
     const pageSize = 10;
 
     try {
@@ -59,6 +59,7 @@ export class MemStorage implements IStorage {
         score: q.score,
         acceptedAnswerId: q.accepted_answer_id ?? null,
         authorName: q.owner.display_name || "Unknown",
+        tags: q.tags ?? [],
         answers: answersByQuestionId
           .get(q.question_id)
           ?.map((a) => ({
@@ -69,6 +70,9 @@ export class MemStorage implements IStorage {
             owner: { display_name: a.owner.display_name || "Unknown" },
           })) ?? [],
       }));
+
+      // Optional tag filter — narrows the current page to questions carrying the tag
+      const filtered = tag ? results.filter((q) => q.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) : results;
 
       // Store in memory for bookmarking and cross-page reference
       results.forEach((q) => {
@@ -81,17 +85,18 @@ export class MemStorage implements IStorage {
         }
       });
 
-      return results;
+      return filtered;
     } catch (error) {
       console.error("Failed to fetch from Stack Overflow API:", error);
       // Fall back to any cached questions
-      return Array.from(this.questions.values())
+      const cached = Array.from(this.questions.values())
         .sort((a, b) => b.score - a.score)
         .slice((page - 1) * pageSize, page * pageSize);
+      return tag ? cached.filter((q) => q.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) : cached;
     }
   }
 
-  async searchQuestions(query: string, page: number): Promise<Question[]> {
+  async searchQuestions(query: string, page: number, tag?: string): Promise<Question[]> {
     const pageSize = 10;
     const cacheKey = query.trim().toLowerCase();
 
@@ -133,6 +138,7 @@ export class MemStorage implements IStorage {
         score: q.score,
         acceptedAnswerId: q.accepted_answer_id ?? null,
         authorName: q.owner.display_name || "Unknown",
+        tags: q.tags ?? [],
         answers: answersByQuestionId
           .get(q.question_id)
           ?.map((a) => ({
@@ -158,7 +164,8 @@ export class MemStorage implements IStorage {
       // Cache search results
       this.setSearchCache(cacheKey, results);
 
-      return results;
+      const filtered = tag ? results.filter((q) => q.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) : results;
+      return filtered;
     } catch (error) {
       console.error("Failed to search Stack Overflow API:", error);
       return [];
@@ -184,6 +191,7 @@ export class MemStorage implements IStorage {
       id,
       stackOverflowId: insertQuestion.stackOverflowId ?? null,
       acceptedAnswerId: insertQuestion.acceptedAnswerId ?? null,
+      tags: Array.isArray(insertQuestion.tags) ? insertQuestion.tags : [],
     };
     this.questions.set(id, question);
     return question;
